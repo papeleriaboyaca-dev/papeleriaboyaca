@@ -51,9 +51,10 @@ export default function App() {
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password" element={<ResetPasswordPage />} />
 
+            <Route path="pedido-confirmado/:id" element={<OrderConfirmedPage />} />
+
             <Route element={<RequireAuth />}>
               <Route path="checkout" element={<CheckoutPage />} />
-              <Route path="pedido-confirmado/:id" element={<OrderConfirmedPage />} />
               <Route path="pedidos" element={<OrdersPage />} />
               <Route path="pedidos/:id" element={<OrderDetailPage />} />
               <Route path="perfil" element={<ProfilePage />} />

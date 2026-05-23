@@ -1,0 +1,28 @@
+version: '3.9'
+
+# Base de datos EXCLUSIVA para tests — puerto diferente al de desarrollo (5433 vs 5432)
+# Uso:
+#   docker compose -f deploy/docker-compose.test.yml up -d
+#   export TEST_DATABASE_URL="postgresql+asyncpg://postgres:testpass@localhost:5433/papeleria_test"
+#   pytest tests_integration/ -v -m integration
+#   docker compose -f deploy/docker-compose.test.yml down -v   # limpia todo
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: papeleria_postgres_test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: papeleria_test
+    ports:
+      - "5433:5432"        # puerto diferente para no chocar con dev
+    tmpfs:
+      - /var/lib/postgresql/data   # datos en RAM — se destruyen al bajar el contenedor
+    volumes:
+      - ../schema.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

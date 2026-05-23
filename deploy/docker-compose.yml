@@ -1,0 +1,259 @@
+version: '3.9'
+
+# Healthcheck común para servicios FastAPI
+x-fastapi-healthcheck: &fastapi-healthcheck
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+services:
+  # ========================================
+  # API Gateway
+  # ========================================
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: api-gateway/Dockerfile
+    container_name: papeleria_api_gateway
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - JWT_SECRET=${JWT_SECRET}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+      - CATALOG_SERVICE_URL=http://catalog-service:8000
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - IDENTITY_SERVICE_URL=http://identity-service:8000
+      - PAYMENT_SERVICE_URL=http://payment-service:8000
+    ports:
+      - "8083:8000"
+    networks:
+      - papeleria_network
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    healthcheck: *fastapi-healthcheck
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Catalog Service (Productos)
+  # ========================================
+  catalog-service:
+    build:
+      context: ..
+      dockerfile: catalog-service/Dockerfile
+    container_name: papeleria_catalog
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SERVICE_NAME=catalog-service
+      - DATABASE_URL=${DATABASE_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+    ports:
+      - "127.0.0.1:8002:8000"
+    networks:
+      - papeleria_network
+    healthcheck: *fastapi-healthcheck
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Order Service (Pedidos)
+  # ========================================
+  order-service:
+    build:
+      context: ..
+      dockerfile: order-service/Dockerfile
+    container_name: papeleria_order
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SERVICE_NAME=order-service
+      - DATABASE_URL=${DATABASE_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - CATALOG_SERVICE_URL=http://catalog-service:8000
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+      - ORDER_CLEANUP_ENABLED=${ORDER_CLEANUP_ENABLED:-true}
+      - ORDER_CLEANUP_TIMEOUT_MINUTES=${ORDER_CLEANUP_TIMEOUT_MINUTES:-60}
+      - ORDER_CLEANUP_INTERVAL_SECONDS=${ORDER_CLEANUP_INTERVAL_SECONDS:-300}
+    ports:
+      - "127.0.0.1:8003:8000"
+    networks:
+      - papeleria_network
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+    healthcheck: *fastapi-healthcheck
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Identity Service (Supabase Auth)
+  # ========================================
+  identity-service:
+    build:
+      context: ..
+      dockerfile: identity-service/Dockerfile
+    container_name: papeleria_identity
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SERVICE_NAME=identity-service
+      - DATABASE_URL=${DATABASE_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+    ports:
+      - "127.0.0.1:8004:8000"
+    networks:
+      - papeleria_network
+    healthcheck: *fastapi-healthcheck
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Payment Service (Wompi)
+  # ========================================
+  payment-service:
+    build:
+      context: ..
+      dockerfile: payment-service/Dockerfile
+    container_name: papeleria_payment
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SERVICE_NAME=payment-service
+      - DATABASE_URL=${DATABASE_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - WOMPI_API_URL=${WOMPI_API_URL:-https://sandbox.wompi.co/v1}
+      - WOMPI_PRIVATE_KEY=${WOMPI_PRIVATE_KEY}
+      - WOMPI_PUBLIC_KEY=${WOMPI_PUBLIC_KEY}
+      - WOMPI_EVENTS_SECRET=${WOMPI_EVENTS_SECRET}
+      - WOMPI_INTEGRITY_SECRET=${WOMPI_INTEGRITY_SECRET}
+      - WOMPI_TEST_MODE=${WOMPI_TEST_MODE:-true}
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "127.0.0.1:8005:8000"
+    networks:
+      - papeleria_network
+    depends_on:
+      order-service:
+        condition: service_healthy
+    healthcheck: *fastapi-healthcheck
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Redis (Opcional — rate limiting / caché)
+  # Puerto NO expuesto al host; solo accesible dentro de la red Docker.
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: papeleria_redis
+    restart: unless-stopped
+    mem_limit: 128m
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme} --bind 0.0.0.0 --protected-mode no
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - papeleria_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - optional
+
+  # ========================================
+  # Frontend (React — build estático servido por nginx)
+  # ========================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: papeleria_frontend
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.25
+    ports:
+      - "8080:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - papeleria_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  papeleria_network:
+    driver: bridge
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  redis_data:

@@ -161,6 +161,14 @@ class OrderService:
             "order_total": order.total
         }
 
+    async def _order_with_address(self, order) -> OrderResponse:
+        resp = OrderResponse.from_orm(order)
+        if order.shipping_address_id:
+            addr = await self.address_repo.find_by_id(order.shipping_address_id)
+            if addr:
+                resp.shipping_address = ShippingAddressResponse.from_orm(addr)
+        return resp
+
     async def get_order(self, order_id: UUID, requesting_user_id: UUID | None = None,
                         is_admin: bool = False) -> OrderResponse:
         order = await self.order_repo.find_by_id(order_id)
@@ -168,16 +176,16 @@ class OrderService:
             raise ValueError("Order not found")
         if requesting_user_id and not is_admin and order.user_id != requesting_user_id:
             raise PermissionError("Not authorized to view this order")
-        return OrderResponse.from_orm(order)
+        return await self._order_with_address(order)
 
     async def list_user_orders(self, user_id: UUID, skip: int = 0,
                               limit: int = 20) -> list[OrderResponse]:
         orders = await self.order_repo.find_by_user(user_id, skip, limit)
-        return [OrderResponse.from_orm(o) for o in orders]
+        return [await self._order_with_address(o) for o in orders]
 
     async def list_all_orders(self, skip: int = 0, limit: int = 100) -> list[OrderResponse]:
         orders = await self.order_repo.find_all(skip, limit)
-        return [OrderResponse.from_orm(o) for o in orders]
+        return [await self._order_with_address(o) for o in orders]
 
     async def update_order_status(self, order_id: UUID, new_status: str,
                                   tracking_number: str | None = None,

@@ -37,6 +37,21 @@ class OrderUpdateStatus(BaseModel):
         return v
 
 
+class ShippingAddressCreate(BaseModel):
+    address_line1: str = Field(min_length=5, max_length=200)
+    address_line2: Optional[str] = Field(None, max_length=200)
+    city: str = Field(min_length=2, max_length=100)
+    postal_code: str = Field(min_length=3, max_length=20)
+
+
+class ShippingAddressResponse(ShippingAddressCreate):
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class OrderResponse(BaseModel):
     id: UUID
     order_number: str
@@ -49,23 +64,9 @@ class OrderResponse(BaseModel):
     discount_amount: float
     total: float
     shipping_address_id: Optional[UUID] = None
+    shipping_address: Optional[ShippingAddressResponse] = None
     tracking_number: Optional[str] = None
     shipping_carrier: Optional[str] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class ShippingAddressCreate(BaseModel):
-    address_line1: str = Field(min_length=5, max_length=200)
-    address_line2: Optional[str] = Field(None, max_length=200)
-    city: str = Field(min_length=2, max_length=100)
-    postal_code: str = Field(min_length=3, max_length=20)
-
-
-class ShippingAddressResponse(ShippingAddressCreate):
-    id: UUID
     created_at: datetime
 
     class Config:

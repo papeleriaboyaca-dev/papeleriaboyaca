@@ -449,12 +449,24 @@ export default function OrdersAdminPage() {
                         <td colSpan={5} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
                           <div className="flex gap-8 text-xs text-gray-600">
                             {/* Left: order meta */}
-                            <div className="space-y-1 min-w-[180px]">
+                            <div className="space-y-1 min-w-[200px]">
                               <p className="font-semibold text-gray-500 uppercase tracking-wide mb-2">Info pedido</p>
                               {order.user_email ? (
                                 <p><span className="font-medium">Cliente:</span> {order.user_email}</p>
                               ) : (
                                 <p><span className="font-medium">Cliente:</span> <span className="font-mono">{order.user_id.slice(0, 8)}…</span></p>
+                              )}
+                              {order.shipping_address ? (
+                                <div className="mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 space-y-0.5">
+                                  <p className="font-semibold text-gray-600">Dirección de envío</p>
+                                  <p>{order.shipping_address.address_line1}</p>
+                                  {order.shipping_address.address_line2 && (
+                                    <p>{order.shipping_address.address_line2}</p>
+                                  )}
+                                  <p>{order.shipping_address.city} · CP {order.shipping_address.postal_code}</p>
+                                </div>
+                              ) : (
+                                <p className="text-gray-400 italic">Sin dirección registrada</p>
                               )}
                               <p><span className="font-medium">Subtotal:</span> {formatCOP(order.subtotal)}</p>
                               {order.discount_amount > 0 && (

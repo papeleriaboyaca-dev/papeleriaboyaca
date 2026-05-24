@@ -147,6 +147,18 @@ export default function OrderDetailPage() {
         </div>
       )}
 
+      {/* Shipping address */}
+      {order.shipping_address && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-poppins font-bold text-[#263238] mb-2 text-sm">Dirección de entrega</h2>
+          <p className="text-sm text-gray-700">{order.shipping_address.address_line1}</p>
+          {order.shipping_address.address_line2 && (
+            <p className="text-sm text-gray-700">{order.shipping_address.address_line2}</p>
+          )}
+          <p className="text-sm text-gray-500">{order.shipping_address.city} · CP {order.shipping_address.postal_code}</p>
+        </div>
+      )}
+
       {/* Shipping info */}
       {(order.status === "shipped" || order.status === "delivered") &&
         (order.tracking_number || order.shipping_carrier) && (

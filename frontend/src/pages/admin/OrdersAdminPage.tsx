@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, Fragment } from "react";
 import { Search, X, RotateCcw } from "lucide-react";
 import { adminService } from "@/services/admin";
+import { orderService } from "@/services/orders";
 import { formatCOP } from "@/lib/utils";
 import { toast } from "@/store/toastStore";
 import { STATUS_LABEL, STATUS_COLOR } from "@/lib/orderStatus";
@@ -56,6 +57,12 @@ export default function OrdersAdminPage() {
     queryKey: ["admin-orders"],
     queryFn: () => adminService.getAllOrders(0, 100),
     refetchInterval: 30_000,
+  });
+
+  const { data: expandedItems = [] } = useQuery({
+    queryKey: ["order-items", expandedId],
+    queryFn: () => orderService.getItems(expandedId!),
+    enabled: !!expandedId,
   });
 
   const statusMutation = useMutation({
@@ -439,29 +446,56 @@ export default function OrdersAdminPage() {
                     {/* Order details expand */}
                     {expandedId === order.id && shippingPanelId !== order.id && (
                       <tr>
-                        <td colSpan={5} className="px-6 py-3 bg-gray-50">
-                          <div className="text-xs text-gray-500 space-y-1">
-                            <p><span className="font-medium">ID pedido:</span> {order.id}</p>
-                            {order.user_email ? (
-                              <p><span className="font-medium">Cliente:</span> {order.user_email}</p>
-                            ) : (
-                              <p><span className="font-medium">Cliente (ID):</span> <span className="font-mono">{order.user_id}</span></p>
-                            )}
-                            <p><span className="font-medium">Subtotal:</span> {formatCOP(order.subtotal)}</p>
-                            {order.discount_amount > 0 && (
-                              <p className="text-green-600">
-                                Descuento: -{formatCOP(order.discount_amount)}
-                              </p>
-                            )}
-                            {order.tracking_number && (
-                              <p>
-                                <span className="font-medium">Guía:</span> {order.tracking_number}
-                                {order.shipping_carrier && ` · ${order.shipping_carrier}`}
-                              </p>
-                            )}
-                            {order.shipping_carrier === "local" && (
-                              <p><span className="font-medium">Envío:</span> 🛵 Entrega local</p>
-                            )}
+                        <td colSpan={5} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                          <div className="flex gap-8 text-xs text-gray-600">
+                            {/* Left: order meta */}
+                            <div className="space-y-1 min-w-[180px]">
+                              <p className="font-semibold text-gray-500 uppercase tracking-wide mb-2">Info pedido</p>
+                              {order.user_email ? (
+                                <p><span className="font-medium">Cliente:</span> {order.user_email}</p>
+                              ) : (
+                                <p><span className="font-medium">Cliente:</span> <span className="font-mono">{order.user_id.slice(0, 8)}…</span></p>
+                              )}
+                              <p><span className="font-medium">Subtotal:</span> {formatCOP(order.subtotal)}</p>
+                              {order.discount_amount > 0 && (
+                                <p className="text-green-600"><span className="font-medium">Descuento:</span> -{formatCOP(order.discount_amount)}</p>
+                              )}
+                              <p className="font-semibold text-[#ff7043]"><span className="font-medium text-gray-600">Total:</span> {formatCOP(order.total)}</p>
+                              {order.tracking_number && (
+                                <p><span className="font-medium">Guía:</span> {order.tracking_number}{order.shipping_carrier && order.shipping_carrier !== "local" && ` · ${order.shipping_carrier}`}</p>
+                              )}
+                              {order.shipping_carrier === "local" && (
+                                <p><span className="font-medium">Envío:</span> Entrega local</p>
+                              )}
+                            </div>
+                            {/* Right: items */}
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-500 uppercase tracking-wide mb-2">Productos</p>
+                              {expandedItems.length === 0 ? (
+                                <p className="text-gray-400">Cargando...</p>
+                              ) : (
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="text-gray-400 border-b border-gray-200">
+                                      <th className="text-left pb-1 font-medium">Producto</th>
+                                      <th className="text-right pb-1 font-medium">Cant.</th>
+                                      <th className="text-right pb-1 font-medium">P. unit</th>
+                                      <th className="text-right pb-1 font-medium">Subtotal</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {expandedItems.map((item) => (
+                                      <tr key={item.id}>
+                                        <td className="py-1 pr-4 font-medium text-gray-700">{item.product_name ?? item.product_id.slice(0, 8)}</td>
+                                        <td className="py-1 text-right">{item.quantity}</td>
+                                        <td className="py-1 text-right">{formatCOP(item.unit_price)}</td>
+                                        <td className="py-1 text-right font-medium">{formatCOP(item.subtotal)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>

@@ -3,11 +3,14 @@ import { catalogService } from "@/services/catalog";
 import { toast } from "@/store/toastStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, RefreshCw, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
+
+const generateSKU = () =>
+  "PB-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
 const schema = z.object({
   sku: z.string().min(2, "SKU requerido").max(50),
@@ -45,6 +48,7 @@ export default function ProductFormPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -59,7 +63,7 @@ export default function ProductFormPage() {
           is_active: existing.is_active,
         }
       : {
-          sku: "",
+          sku: generateSKU(),
           name: "",
           description: "",
           price: 0,
@@ -153,17 +157,29 @@ export default function ProductFormPage() {
               <span className="text-gray-400 font-normal">(no editable)</span>
             )}
           </label>
-          <input
-            {...register("sku")}
-            type="text"
-            placeholder="CUAD-001"
-            readOnly={isEdit}
-            className={`w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm outline-none transition ${
-              isEdit
-                ? "bg-gray-50 text-gray-500 cursor-not-allowed"
-                : "focus:border-[#00bfa5] focus:ring-1 focus:ring-[#00bfa5]"
-            }`}
-          />
+          <div className="flex gap-2">
+            <input
+              {...register("sku")}
+              type="text"
+              placeholder="PB-K7X2M9"
+              readOnly={isEdit}
+              className={`flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm outline-none transition ${
+                isEdit
+                  ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                  : "focus:border-[#00bfa5] focus:ring-1 focus:ring-[#00bfa5]"
+              }`}
+            />
+            {!isEdit && (
+              <button
+                type="button"
+                onClick={() => setValue("sku", generateSKU())}
+                className="px-3 py-2.5 border border-gray-300 rounded-xl text-gray-500 hover:text-[#00bfa5] hover:border-[#00bfa5] transition"
+                title="Generar nuevo SKU"
+              >
+                <RefreshCw size={15} />
+              </button>
+            )}
+          </div>
           {errors.sku && (
             <p className="text-xs text-red-500 mt-1">{errors.sku.message}</p>
           )}

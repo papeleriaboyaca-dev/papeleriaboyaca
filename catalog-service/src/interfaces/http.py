@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 from typing import Optional
 from pydantic import BaseModel
@@ -96,7 +97,13 @@ async def delete_category(
     category_id: UUID,
     category_service: CategoryService = Depends(get_category_service),
 ):
-    deleted = await category_service.delete_category(category_id)
+    try:
+        deleted = await category_service.delete_category(category_id)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar: la categoría tiene productos asociados",
+        )
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 

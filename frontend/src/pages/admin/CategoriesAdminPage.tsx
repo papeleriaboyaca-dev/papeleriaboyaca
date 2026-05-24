@@ -55,7 +55,10 @@ export default function CategoriesAdminPage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       toast.success("Categoría eliminada");
     },
-    onError: () => toast.error("No se pudo eliminar la categoría"),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(msg || "No se pudo eliminar la categoría");
+    },
     onSettled: () => setConfirmDeleteId(null),
   });
 

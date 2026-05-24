@@ -69,6 +69,7 @@ class ProductRepository:
             if hasattr(product, key):
                 setattr(product, key, value)
         await self.session.flush()
+        await self.session.refresh(product)
         return product
 
     async def deactivate(self, product_id: UUID) -> bool:
@@ -173,6 +174,7 @@ class CategoryRepository:
         for key, value in kwargs.items():
             setattr(category, key, value)
         await self.session.flush()
+        await self.session.refresh(category)
         return category
 
     async def delete(self, category_id: UUID) -> bool:
@@ -227,6 +229,7 @@ class MarketingContentRepository:
         for k, v in kwargs.items():
             setattr(content, k, v)
         await self.session.flush()
+        await self.session.refresh(content)
         return content
 
     async def delete(self, id: UUID) -> MarketingContent | None:

@@ -3,7 +3,7 @@ import { adminService } from "@/services/admin";
 import { catalogService } from "@/services/catalog";
 import { toast } from "@/store/toastStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ImagePlus, Pencil, Plus, Search, Trash2, ToggleLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -39,6 +39,15 @@ export default function ProductsAdminPage() {
       toast.success("Producto desactivado");
     },
     onError: () => toast.error("No se pudo desactivar el producto"),
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: (id: string) => adminService.updateProduct(id, { is_active: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast.success("Producto activado");
+    },
+    onError: () => toast.error("No se pudo activar el producto"),
   });
 
   const uploadMutation = useMutation({
@@ -235,30 +244,41 @@ export default function ProductsAdminPage() {
                         >
                           <Pencil size={15} />
                         </Link>
-                        {confirmDeactivateId === p.id ? (
-                          <>
+                        {p.is_active ? (
+                          confirmDeactivateId === p.id ? (
+                            <>
+                              <button
+                                onClick={() => handleDelete(p.id)}
+                                disabled={deleteMutation.isPending}
+                                className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition disabled:opacity-60"
+                              >
+                                Sí
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeactivateId(null)}
+                                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                              >
+                                No
+                              </button>
+                            </>
+                          ) : (
                             <button
                               onClick={() => handleDelete(p.id)}
                               disabled={deleteMutation.isPending}
-                              className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition disabled:opacity-60"
+                              className="p-1.5 text-gray-400 hover:text-red-500 transition rounded-lg hover:bg-gray-100 disabled:opacity-40"
+                              title="Desactivar"
                             >
-                              Sí
+                              <Trash2 size={15} />
                             </button>
-                            <button
-                              onClick={() => setConfirmDeactivateId(null)}
-                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                            >
-                              No
-                            </button>
-                          </>
+                          )
                         ) : (
                           <button
-                            onClick={() => handleDelete(p.id)}
-                            disabled={deleteMutation.isPending}
-                            className="p-1.5 text-gray-400 hover:text-red-500 transition rounded-lg hover:bg-gray-100 disabled:opacity-40"
-                            title="Desactivar"
+                            onClick={() => activateMutation.mutate(p.id)}
+                            disabled={activateMutation.isPending}
+                            className="p-1.5 text-gray-400 hover:text-green-500 transition rounded-lg hover:bg-gray-100 disabled:opacity-40"
+                            title="Activar producto"
                           >
-                            <Trash2 size={15} />
+                            <ToggleLeft size={15} />
                           </button>
                         )}
                       </div>

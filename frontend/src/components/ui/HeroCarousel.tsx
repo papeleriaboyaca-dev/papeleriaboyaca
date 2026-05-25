@@ -44,8 +44,8 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
 
   return (
     <div
-      className="relative overflow-hidden select-none"
-      style={{ aspectRatio: "21 / 7", maxHeight: 480 }}
+      className="relative overflow-hidden select-none w-full"
+      style={{ height: "min(33.33vw, 480px)" }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onMouseEnter={() => setPaused(true)}

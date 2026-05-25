@@ -50,14 +50,19 @@ export default function OrderDetailAdminModal({ orderId, onClose, onRefund }: Pr
     setTrackingNumber("");
   }, [orderId]);
 
-  // Cerrar con ESC
+  // Cerrar con ESC + bloquear scroll del body mientras está abierto.
   useEffect(() => {
     if (!orderId) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [orderId, onClose]);
 
   const { data: order, isLoading: loadingOrder } = useQuery({
@@ -149,11 +154,11 @@ export default function OrderDetailAdminModal({ orderId, onClose, onRefund }: Pr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-[fadeIn_120ms_ease-out]"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto"
+        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto animate-[slideUp_160ms_ease-out] sm:animate-[fadeIn_160ms_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

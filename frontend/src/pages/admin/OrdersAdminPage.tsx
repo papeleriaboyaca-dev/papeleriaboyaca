@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronRight, RotateCcw, Search, X } from "lucide-react";
 import { adminService } from "@/services/admin";
@@ -20,31 +20,17 @@ const ALL_STATUSES: OrderStatus[] = [
 ];
 
 export default function OrdersAdminPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  // Leemos el query ?id solo al montar (deep-link desde Dashboard).
+  // No volvemos a tocar la URL después: actualizarla en cada apertura/cierre
+  // disparaba re-renders del Router que se veían como un flash al abrir el modal.
+  const [searchParams] = useSearchParams();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(
-    searchParams.get("id"),
+    () => searchParams.get("id"),
   );
   const [refundOrderNumber, setRefundOrderNumber] = useState<string | null>(null);
 
-  // Mantener URL y modal sincronizados (deep links desde Dashboard).
-  useEffect(() => {
-    const idParam = searchParams.get("id");
-    if (idParam !== selectedOrderId) setSelectedOrderId(idParam);
-  }, [searchParams, selectedOrderId]);
-
-  const handleOpen = (id: string) => {
-    setSelectedOrderId(id);
-    setSearchParams({ id }, { replace: true });
-  };
-
-  const handleClose = () => {
-    setSelectedOrderId(null);
-    if (searchParams.has("id")) {
-      const next = new URLSearchParams(searchParams);
-      next.delete("id");
-      setSearchParams(next, { replace: true });
-    }
-  };
+  const handleOpen = (id: string) => setSelectedOrderId(id);
+  const handleClose = () => setSelectedOrderId(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");

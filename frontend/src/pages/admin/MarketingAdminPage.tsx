@@ -124,7 +124,7 @@ export default function MarketingAdminPage() {
 
     // Aviso de orientación — no bloquea, solo informa
     await new Promise<void>((resolve) => {
-      const img = new Image();
+      const img = document.createElement("img");
       const url = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(url);

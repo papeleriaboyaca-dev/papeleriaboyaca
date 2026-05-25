@@ -92,10 +92,9 @@ async def verify_internal_auth(request, call_next):
 
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):
-    if settings.ENVIRONMENT == "production":
-        logger.error("Unhandled error at %s: %s", request.url.path, type(exc).__name__)
-    else:
-        logger.error("Unhandled error: %s", exc, exc_info=True)
+    # Siempre traceback completo en logs internos — facilita diagnóstico sin
+    # exponer detalles al cliente.
+    logger.error("Unhandled error at %s %s", request.method, request.url.path, exc_info=True)
     return JSONResponse(status_code=500, content={"detail": "Server error"})
 
 

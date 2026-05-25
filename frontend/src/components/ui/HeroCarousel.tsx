@@ -51,17 +51,21 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Slides */}
+      {/* Track — ancho explícito para que translateX sea predecible */}
       <div
-        className="flex h-full transition-transform duration-500 ease-in-out will-change-transform"
-        style={{ transform: `translateX(-${current * 100}%)` }}
+        className="flex h-full transition-transform duration-500 ease-in-out"
+        style={{
+          width: `${total * 100}%`,
+          transform: `translateX(-${(current / total) * 100}%)`,
+        }}
       >
         {items.map((item) => (
           <div
             key={item.id}
-            className="w-full h-full shrink-0 bg-[#263238] flex items-center justify-center relative"
+            className="relative h-full bg-[#263238] flex items-center justify-center overflow-hidden"
+            style={{ width: `${100 / total}%` }}
           >
-            <span className="text-white/40 text-sm font-medium px-4 text-center">
+            <span className="text-white/40 text-sm font-medium px-4 text-center select-none">
               {item.title}
             </span>
             {item.image_url && (

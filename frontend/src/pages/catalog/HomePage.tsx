@@ -90,8 +90,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
-      {categories.length > 0 && (
+      {/* Categories — sólo si hay al menos 4 */}
+      {categories.length >= 4 && (
         <section className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-5">
             <h2 className="section-title">Categorías</h2>

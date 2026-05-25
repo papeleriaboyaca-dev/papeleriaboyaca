@@ -618,17 +618,28 @@ async def upload_product_image(
         sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
         sb.storage.from_("product-images").upload(
             path, contents,
-            file_options={"content-type": file.content_type or "image/jpeg", "upsert": "true"},
+            file_options={"content_type": file.content_type or "image/jpeg", "upsert": True},
         )
         return sb.storage.from_("product-images").get_public_url(path)
 
     loop = asyncio.get_running_loop()
     try:
-        public_url = await loop.run_in_executor(None, _upload)
-    except Exception as e:
+        public_url = await asyncio.wait_for(
+            loop.run_in_executor(None, _upload),
+            timeout=30.0,
+        )
+    except asyncio.TimeoutError:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Storage upload failed: {e}",
+            detail="Timeout al subir imagen al storage (>30s)",
+        )
+    except Exception as e:
+        detail = getattr(e, "message", None) or str(e)
+        if not isinstance(detail, str):
+            detail = str(detail)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error al subir imagen: {detail}",
         )
 
     try:
@@ -1108,15 +1119,29 @@ async def upload_marketing_image(
         sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
         sb.storage.from_("marketing").upload(
             path, contents,
-            file_options={"content-type": file.content_type or "image/jpeg", "upsert": "true"},
+            file_options={"content_type": file.content_type or "image/jpeg", "upsert": True},
         )
         return sb.storage.from_("marketing").get_public_url(path)
 
     loop = asyncio.get_running_loop()
     try:
-        public_url = await loop.run_in_executor(None, _upload)
+        public_url = await asyncio.wait_for(
+            loop.run_in_executor(None, _upload),
+            timeout=30.0,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Timeout al subir imagen al storage (>30s)",
+        )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Storage upload failed: {e}")
+        detail = getattr(e, "message", None) or str(e)
+        if not isinstance(detail, str):
+            detail = str(detail)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error al subir imagen: {detail}",
+        )
 
     try:
         async with _internal_client() as client:

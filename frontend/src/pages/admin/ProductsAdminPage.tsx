@@ -1,6 +1,7 @@
 import { formatCOP } from "@/lib/utils";
 import { adminService } from "@/services/admin";
 import { catalogService } from "@/services/catalog";
+import { getApiErrorDetail } from "@/lib/apiError";
 import { toast } from "@/store/toastStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, Pencil, Plus, Search, Trash2, ToggleLeft } from "lucide-react";
@@ -44,7 +45,10 @@ export default function ProductsAdminPage() {
       invalidateProductCaches();
       toast.success("Producto desactivado");
     },
-    onError: () => toast.error("No se pudo desactivar el producto"),
+    onError: (err: unknown) => {
+      console.error("[deleteProduct]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo desactivar el producto");
+    },
   });
 
   const activateMutation = useMutation({
@@ -53,7 +57,10 @@ export default function ProductsAdminPage() {
       invalidateProductCaches();
       toast.success("Producto activado");
     },
-    onError: () => toast.error("No se pudo activar el producto"),
+    onError: (err: unknown) => {
+      console.error("[activateProduct]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo activar el producto");
+    },
   });
 
   const uploadMutation = useMutation({
@@ -64,7 +71,10 @@ export default function ProductsAdminPage() {
       setImageProductId(null);
       toast.success("Imagen actualizada");
     },
-    onError: () => toast.error("Error al subir la imagen"),
+    onError: (err: unknown) => {
+      console.error("[uploadProductImage]", err);
+      toast.error(getApiErrorDetail(err) ?? "Error al subir la imagen");
+    },
   });
 
   const handleDelete = (id: string) => {

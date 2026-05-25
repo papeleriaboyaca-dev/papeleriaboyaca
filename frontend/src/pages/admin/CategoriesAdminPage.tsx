@@ -1,5 +1,6 @@
 import { adminService } from "@/services/admin";
 import { catalogService } from "@/services/catalog";
+import { getApiErrorDetail } from "@/lib/apiError";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Tag, Trash2, Pencil, Check, X } from "lucide-react";
@@ -35,6 +36,11 @@ export default function CategoriesAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       reset();
+      toast.success("Categoría creada");
+    },
+    onError: (err: unknown) => {
+      console.error("[createCategory]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo crear la categoría");
     },
   });
 
@@ -47,8 +53,7 @@ export default function CategoriesAdminPage() {
     },
     onError: (err: unknown) => {
       console.error("[updateCategory]", err);
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(typeof detail === "string" ? detail : "No se pudo actualizar la categoría");
+      toast.error(getApiErrorDetail(err) ?? "No se pudo actualizar la categoría");
     },
     onSettled: () => setEditingId(null),
   });
@@ -60,8 +65,8 @@ export default function CategoriesAdminPage() {
       toast.success("Categoría eliminada");
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(msg || "No se pudo eliminar la categoría");
+      console.error("[deleteCategory]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo eliminar la categoría");
     },
     onSettled: () => setConfirmDeleteId(null),
   });
@@ -112,11 +117,6 @@ export default function CategoriesAdminPage() {
           >
             {createMutation.isPending ? "Creando..." : "Crear categoría"}
           </button>
-          {createMutation.isError && (
-            <p className="text-xs text-red-500">
-              Error al crear. Intenta de nuevo.
-            </p>
-          )}
         </form>
       </div>
 

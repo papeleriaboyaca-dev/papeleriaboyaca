@@ -4,6 +4,7 @@ import { Package, RotateCcw, X } from "lucide-react";
 import { adminService } from "@/services/admin";
 import { orderService } from "@/services/orders";
 import { formatCOP } from "@/lib/utils";
+import { getApiErrorDetail } from "@/lib/apiError";
 import { toast } from "@/store/toastStore";
 import { STATUS_COLOR, STATUS_LABEL } from "@/lib/orderStatus";
 import type { OrderStatus } from "@/types";
@@ -84,8 +85,8 @@ export default function OrderDetailAdminModal({ orderId, onClose, onRefund }: Pr
       setShowShippingPanel(false);
     },
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(typeof detail === "string" ? detail : "No se pudo actualizar el estado");
+      console.error("[updateOrderStatus]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo actualizar el estado");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
@@ -99,7 +100,10 @@ export default function OrderDetailAdminModal({ orderId, onClose, onRefund }: Pr
       toast.success("Pedido cancelado");
       setConfirmCancel(false);
     },
-    onError: () => toast.error("No se pudo cancelar el pedido"),
+    onError: (err: unknown) => {
+      console.error("[cancelOrder]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo cancelar el pedido");
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });

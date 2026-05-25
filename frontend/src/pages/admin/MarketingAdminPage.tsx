@@ -1,4 +1,5 @@
 import { marketingService } from "@/services/marketing";
+import { getApiErrorDetail } from "@/lib/apiError";
 import { toast } from "@/store/toastStore";
 import type { MarketingContent } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -45,7 +46,10 @@ export default function MarketingAdminPage() {
       });
       toast.success("Banner creado. Ahora sube la imagen.");
     },
-    onError: () => toast.error("No se pudo crear el banner"),
+    onError: (err: unknown) => {
+      console.error("[createMarketing]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo crear el banner");
+    },
   });
 
   const updateMutation = useMutation({
@@ -60,7 +64,10 @@ export default function MarketingAdminPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-marketing"] });
       queryClient.invalidateQueries({ queryKey: ["marketing-public"] });
     },
-    onError: () => toast.error("Error al actualizar"),
+    onError: (err: unknown) => {
+      console.error("[updateMarketing]", err);
+      toast.error(getApiErrorDetail(err) ?? "Error al actualizar");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -70,7 +77,10 @@ export default function MarketingAdminPage() {
       queryClient.invalidateQueries({ queryKey: ["marketing-public"] });
       toast.success("Banner eliminado");
     },
-    onError: () => toast.error("No se pudo eliminar"),
+    onError: (err: unknown) => {
+      console.error("[deleteMarketing]", err);
+      toast.error(getApiErrorDetail(err) ?? "No se pudo eliminar");
+    },
   });
 
   const uploadMutation = useMutation({
@@ -85,8 +95,7 @@ export default function MarketingAdminPage() {
     onError: (err: unknown) => {
       setuploadingId(null);
       console.error("[uploadMarketingImage]", err);
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(typeof detail === "string" ? detail : "Error al subir imagen");
+      toast.error(getApiErrorDetail(err) ?? "Error al subir imagen");
     },
   });
 

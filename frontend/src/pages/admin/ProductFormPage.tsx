@@ -1,5 +1,6 @@
 import { adminService } from "@/services/admin";
 import { catalogService } from "@/services/catalog";
+import { getApiErrorDetail } from "@/lib/apiError";
 import { toast } from "@/store/toastStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -76,8 +77,11 @@ export default function ProductFormPage() {
   const imageMutation = useMutation({
     mutationFn: ({ productId, file }: { productId: string; file: File }) =>
       adminService.uploadImage(productId, file),
-    onError: () =>
-      toast.error("Producto guardado, pero no se pudo subir la imagen"),
+    onError: (err: unknown) => {
+      console.error("[uploadProductImage]", err);
+      const detail = getApiErrorDetail(err);
+      toast.error(detail ?? "Producto guardado, pero no se pudo subir la imagen");
+    },
   });
 
   const mutation = useMutation({
@@ -98,7 +102,10 @@ export default function ProductFormPage() {
       toast.success(isEdit ? "Producto actualizado" : "Producto creado");
       navigate("/admin/productos");
     },
-    onError: () => toast.error("Error al guardar el producto"),
+    onError: (err: unknown) => {
+      console.error(isEdit ? "[updateProduct]" : "[createProduct]", err);
+      toast.error(getApiErrorDetail(err) ?? "Error al guardar el producto");
+    },
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

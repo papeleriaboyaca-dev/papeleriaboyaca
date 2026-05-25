@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { ArrowRight, Truck, ShieldCheck, Package, Headphones } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowRight, Truck, ShieldCheck, Package } from "lucide-react";
 import { catalogService } from "@/services/catalog";
 import { marketingService } from "@/services/marketing";
 import ProductCard from "@/components/ui/ProductCard";
@@ -9,6 +9,7 @@ import HeroCarousel from "@/components/ui/HeroCarousel";
 import PromoPanels from "@/components/ui/PromoPanels";
 import CartSidebar from "@/components/ui/CartSidebar";
 import { useCartStore } from "@/store/cartStore";
+import { categoryEmoji } from "@/lib/categoryEmoji";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -21,11 +22,17 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: featured = [], isLoading: loadingFeatured } = useQuery({
+  const { data: featuredRaw = [], isLoading: loadingFeatured } = useQuery({
     queryKey: ["products-featured"],
-    queryFn: () => catalogService.getProducts({ limit: 8 }),
+    queryFn: () => catalogService.getProducts({ limit: 16 }),
     staleTime: 2 * 60 * 1000,
   });
+
+  // Skip productos agotados — si hay stock, hay siguientes esperando.
+  const featured = useMemo(
+    () => featuredRaw.filter((p) => p.stock > 0).slice(0, 8),
+    [featuredRaw]
+  );
 
   const { data: marketing } = useQuery({
     queryKey: ["marketing-public"],
@@ -63,14 +70,13 @@ export default function HomePage() {
 
       {/* Trust strip */}
       <section className="border-y border-gray-100 bg-white">
-        <div className="container mx-auto px-4 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="container mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8">
           {[
             { icon: Truck, label: "Envío a domicilio", sub: "Boyacá y más" },
             { icon: ShieldCheck, label: "Pago seguro", sub: "Wompi · PSE · Nequi" },
             { icon: Package, label: "Inventario propio", sub: "Siempre disponible" },
-            { icon: Headphones, label: "Atención al cliente", sub: "Respondemos rápido" },
           ].map(({ icon: Icon, label, sub }) => (
-            <div key={label} className="flex items-center gap-3">
+            <div key={label} className="flex items-center gap-3 justify-center sm:justify-start">
               <div className="w-9 h-9 rounded-full bg-[#e0f7f4] flex items-center justify-center shrink-0">
                 <Icon size={16} className="text-[#00bfa5]" />
               </div>
@@ -85,7 +91,7 @@ export default function HomePage() {
 
       {/* Categories */}
       {categories.length > 0 && (
-        <section className="container mx-auto px-4 py-10">
+        <section className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-5">
             <h2 className="section-title">Categorías</h2>
             <Link to="/catalogo" className="text-sm text-[#00bfa5] hover:underline font-medium">
@@ -97,10 +103,10 @@ export default function HomePage() {
               <Link
                 key={cat.id}
                 to={`/catalogo/${cat.id}`}
-                className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-border hover:border-[#00bfa5] hover:shadow-sm transition group"
+                className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-border hover:border-[#00bfa5] hover:shadow-sm transition"
               >
-                <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-[#00bfa5] font-bold text-sm group-hover:bg-[#00bfa5] group-hover:text-white transition">
-                  {cat.name[0].toUpperCase()}
+                <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-xl">
+                  {categoryEmoji(cat.slug)}
                 </div>
                 <span className="text-xs font-medium text-gray-600 text-center line-clamp-2 leading-tight">
                   {cat.name}
@@ -114,8 +120,9 @@ export default function HomePage() {
       {/* Promo panels */}
       <PromoPanels items={panelItems} />
 
-      {/* Featured products */}
-      <section className="container mx-auto px-4 pb-12">
+      {/* Featured products — oculto si todos están agotados */}
+      {(loadingFeatured || featured.length > 0) && (
+      <section className="container mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-5">
           <h2 className="section-title">Productos destacados</h2>
           <Link to="/catalogo" className="text-sm text-[#00bfa5] hover:underline font-medium">
@@ -148,6 +155,7 @@ export default function HomePage() {
           </div>
         )}
       </section>
+      )}
 
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
     </>

@@ -133,6 +133,25 @@ def _upstream_error(e: httpx.HTTPError) -> HTTPException:
     return HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
 
 
+def _proxy_error(e: httpx.HTTPStatusError) -> HTTPException:
+    """Re-raise upstream JSON errors aplanando `detail` a string cuando es posible.
+
+    El upstream (microservicios FastAPI) ya responde con `{"detail": "..."}`.
+    Si re-anidábamos el body completo dentro de un nuevo `detail`, el cliente
+    terminaba recibiendo `{"detail": {"detail": "..."}}` y crasheaba al
+    renderizar un objeto donde esperaba un string.
+    """
+    try:
+        body = e.response.json()
+        if isinstance(body, dict):
+            detail = body.get("detail", body)
+        else:
+            detail = body
+    except Exception:
+        detail = e.response.text or str(e)
+    return HTTPException(status_code=e.response.status_code, detail=detail)
+
+
 # ── Auth dependency ───────────────────────────────────────────────────────────
 
 def get_current_user(authorization: str = Header(None)) -> dict:
@@ -223,7 +242,7 @@ async def register(request: Request, request_data: RegisterRequest):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -240,7 +259,7 @@ async def login(request: Request, request_data: LoginRequest):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -257,7 +276,7 @@ async def refresh_token(request: Request, request_data: RefreshRequest):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -275,7 +294,7 @@ async def logout(authorization: str = Header(None),
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -291,7 +310,7 @@ async def forgot_password(request: Request, request_data: ForgotPasswordRequest)
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -312,7 +331,7 @@ async def change_password(
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -330,7 +349,7 @@ async def get_me(user: dict = Depends(get_current_user)):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -350,7 +369,7 @@ async def update_me(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -372,7 +391,7 @@ async def admin_list_users(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -392,7 +411,7 @@ async def admin_set_user_active(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -412,7 +431,7 @@ async def admin_change_user_role(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -457,7 +476,7 @@ async def list_products(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -472,7 +491,7 @@ async def get_product(product_id: str):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -485,7 +504,7 @@ async def list_categories():
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -504,7 +523,7 @@ async def create_product(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -524,7 +543,7 @@ async def update_product(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -542,7 +561,7 @@ async def delete_product(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -621,7 +640,7 @@ async def upload_product_image(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -640,7 +659,7 @@ async def create_category(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -660,7 +679,7 @@ async def update_category(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -677,7 +696,7 @@ async def delete_category(
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -706,7 +725,7 @@ async def list_orders(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -724,7 +743,7 @@ async def get_order(order_id: str, user: dict = Depends(get_current_user)):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -747,7 +766,7 @@ async def get_order_items(order_id: str, user: dict = Depends(get_current_user))
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -772,7 +791,7 @@ async def create_order(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -792,7 +811,7 @@ async def update_order_status(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -813,7 +832,7 @@ async def cancel_order(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -831,7 +850,7 @@ async def list_addresses(user: dict = Depends(require_client_only)):
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -851,7 +870,7 @@ async def create_address(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -872,7 +891,7 @@ async def update_address(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -892,7 +911,7 @@ async def delete_address(
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -921,7 +940,7 @@ async def list_transactions(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -942,7 +961,7 @@ async def get_transaction(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -964,7 +983,7 @@ async def create_transaction(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -986,7 +1005,7 @@ async def wompi_checkout(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -999,7 +1018,7 @@ async def get_public_marketing():
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -1012,7 +1031,7 @@ async def list_marketing(_user: dict = Depends(require_role("ADMIN", "SUPERADMIN
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -1028,7 +1047,7 @@ async def create_marketing(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -1047,7 +1066,7 @@ async def update_marketing(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -1064,7 +1083,7 @@ async def delete_marketing(
             )
             response.raise_for_status()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 
@@ -1108,7 +1127,7 @@ async def upload_marketing_image(
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.json())
+        raise _proxy_error(e)
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 

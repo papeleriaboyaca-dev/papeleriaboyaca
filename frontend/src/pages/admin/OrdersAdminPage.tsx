@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, Fragment } from "react";
-import { Search, X, RotateCcw } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronRight, Search, X, RotateCcw } from "lucide-react";
 import { adminService } from "@/services/admin";
 import { orderService } from "@/services/orders";
 import { formatCOP } from "@/lib/utils";
@@ -254,7 +255,55 @@ export default function OrdersAdminPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Mobile cards (< sm). Acciones avanzadas siguen en la tabla desktop. */}
+      <div className="sm:hidden space-y-3">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 bg-white rounded-xl border animate-pulse" />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="text-center text-gray-400 py-10 bg-white rounded-xl border border-gray-200">
+            {orders.length === 0 ? "Sin pedidos." : "No hay pedidos con esos filtros."}
+          </div>
+        ) : (
+          filtered.map((order) => (
+            <Link
+              key={order.id}
+              to={`/pedidos/${order.id}`}
+              className="block bg-white rounded-xl border border-gray-200 p-4 hover:border-[#00bfa5] hover:shadow-sm transition"
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <span className="font-mono text-xs font-medium text-gray-700 truncate">
+                  {order.order_number}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${STATUS_COLOR[order.status] ?? "bg-gray-100 text-gray-500"}`}
+                >
+                  {STATUS_LABEL[order.status] ?? order.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-gray-400">
+                  {new Date(order.created_at).toLocaleDateString("es-CO", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[#ff7043]">{formatCOP(order.total)}</span>
+                  <ChevronRight size={14} className="text-gray-300" />
+                </div>
+              </div>
+            </Link>
+          ))
+        )}
+        <p className="text-[11px] text-gray-400 text-center px-4">
+          Para gestionar pedidos (cambiar estado, marcar enviado) usá un equipo de escritorio.
+        </p>
+      </div>
+
+      <div className="hidden sm:block bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

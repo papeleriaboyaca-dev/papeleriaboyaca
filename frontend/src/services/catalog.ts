@@ -6,6 +6,7 @@ export interface ProductFilters {
   limit?: number;
   category_id?: string;
   q?: string;
+  active_only?: boolean;
 }
 
 export const catalogService = {

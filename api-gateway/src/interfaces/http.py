@@ -428,18 +428,12 @@ async def list_products(
     max_price: Optional[float] = None,
     sort_by: Optional[str] = None,
     q: Optional[str] = None,
-    authorization: Optional[str] = Header(None),
+    active_only: Optional[bool] = None,
 ):
-    # Admins see inactive products too
-    is_admin = False
-    if authorization and authorization.startswith("Bearer "):
-        try:
-            user = get_current_user(authorization)
-            is_admin = _get_role(user) in ("ADMIN", "SUPERADMIN")
-        except HTTPException:
-            pass
-
-    params = {"skip": skip, "limit": limit, "active_only": str(not is_admin).lower()}
+    # active_only is explicit from the frontend. Default true for the public catalog.
+    # Admin pages should pass active_only=false to see inactive products too.
+    effective_active_only = True if active_only is None else active_only
+    params = {"skip": skip, "limit": limit, "active_only": str(effective_active_only).lower()}
     if category_id:
         params["category_id"] = category_id
     if min_price is not None:

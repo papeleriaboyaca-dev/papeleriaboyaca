@@ -22,7 +22,7 @@ export default function ProductsAdminPage() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => catalogService.getProducts({ limit: 200 }),
+    queryFn: () => catalogService.getProducts({ limit: 200, active_only: false }),
     staleTime: 0,
   });
 
@@ -32,10 +32,16 @@ export default function ProductsAdminPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const invalidateProductCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+    queryClient.invalidateQueries({ queryKey: ["products-featured"] });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminService.deleteProduct(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      invalidateProductCaches();
       toast.success("Producto desactivado");
     },
     onError: () => toast.error("No se pudo desactivar el producto"),
@@ -44,7 +50,7 @@ export default function ProductsAdminPage() {
   const activateMutation = useMutation({
     mutationFn: (id: string) => adminService.updateProduct(id, { is_active: true }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      invalidateProductCaches();
       toast.success("Producto activado");
     },
     onError: () => toast.error("No se pudo activar el producto"),
@@ -54,7 +60,7 @@ export default function ProductsAdminPage() {
     mutationFn: ({ id, file }: { id: string; file: File }) =>
       adminService.uploadImage(id, file),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      invalidateProductCaches();
       setImageProductId(null);
       toast.success("Imagen actualizada");
     },

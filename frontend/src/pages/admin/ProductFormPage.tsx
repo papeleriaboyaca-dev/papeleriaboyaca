@@ -93,6 +93,8 @@ export default function ProductFormPage() {
         });
       }
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-featured"] });
       toast.success(isEdit ? "Producto actualizado" : "Producto creado");
       navigate("/admin/productos");
     },

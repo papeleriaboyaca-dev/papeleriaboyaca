@@ -1,15 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Package, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { orderService } from "@/services/orders";
+import { useAuthStore } from "@/store/authStore";
 import { formatCOP } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_COLOR } from "@/lib/orderStatus";
 
 const PAGE_SIZE = 10;
 
 export default function OrdersPage() {
+  const role = useAuthStore((s) => s.user?.user_role);
   const [page, setPage] = useState(1);
+
+  // Admins gestionan pedidos desde /admin/pedidos, no ven la vista cliente.
+  if (role === "ADMIN" || role === "SUPERADMIN") {
+    return <Navigate to="/admin/pedidos" replace />;
+  }
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["orders", page],

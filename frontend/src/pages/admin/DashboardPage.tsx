@@ -156,7 +156,7 @@ export default function DashboardPage() {
             orders.slice(0, 10).map((order) => (
               <Link
                 key={order.id}
-                to={`/pedidos/${order.id}`}
+                to={`/admin/pedidos?id=${order.id}`}
                 className="px-5 py-3 flex items-center gap-4 text-sm hover:bg-gray-50 transition"
               >
                 <span className="font-mono text-gray-600 text-xs font-medium w-32 shrink-0">

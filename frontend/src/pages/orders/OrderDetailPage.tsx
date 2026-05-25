@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { ArrowLeft, Package } from "lucide-react";
 import { orderService } from "@/services/orders";
+import { useAuthStore } from "@/store/authStore";
 import { formatCOP } from "@/lib/utils";
 import { toast } from "@/store/toastStore";
 import { STATUS_LABEL } from "@/lib/orderStatus";
@@ -21,6 +22,12 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const role = useAuthStore((s) => s.user?.user_role);
+
+  // Admins ven el detalle desde el modal del panel admin.
+  if (role === "ADMIN" || role === "SUPERADMIN") {
+    return <Navigate to="/admin/pedidos" replace />;
+  }
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],

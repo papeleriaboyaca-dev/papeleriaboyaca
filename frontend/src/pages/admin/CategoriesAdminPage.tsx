@@ -49,6 +49,12 @@ export default function CategoriesAdminPage() {
 
   const totalProducts = products.length;
 
+  const normalizeName = (s: string) => s.trim().toLowerCase();
+  const nameExists = (name: string, excludeId?: string) =>
+    categories.some(
+      (c) => normalizeName(c.name) === normalizeName(name) && c.id !== excludeId,
+    );
+
   const createMutation = useMutation({
     mutationFn: adminService.createCategory,
     onSuccess: () => {
@@ -141,7 +147,13 @@ export default function CategoriesAdminPage() {
       {showCreateForm && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 animate-[fadeIn_120ms_ease-out]">
           <form
-            onSubmit={handleSubmit((data) => createMutation.mutate(data))}
+            onSubmit={handleSubmit((data) => {
+              if (nameExists(data.name)) {
+                toast.error("Ya existe una categoría con ese nombre");
+                return;
+              }
+              createMutation.mutate(data);
+            })}
             className="space-y-3"
           >
             <div>
@@ -269,15 +281,19 @@ export default function CategoriesAdminPage() {
                   {isEditing ? (
                     <>
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          if (nameExists(editName, c.id)) {
+                            toast.error("Ya existe una categoría con ese nombre");
+                            return;
+                          }
                           updateMutation.mutate({
                             id: c.id,
                             data: {
                               name: editName,
                               description: editDesc || undefined,
                             },
-                          })
-                        }
+                          });
+                        }}
                         disabled={!editName.trim() || updateMutation.isPending}
                         className="p-1.5 text-[#00bfa5] hover:text-[#009e8a] hover:bg-brand-light rounded-lg disabled:opacity-40 transition"
                         title="Guardar"

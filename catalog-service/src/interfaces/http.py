@@ -76,6 +76,11 @@ async def create_category(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una categoría con ese nombre",
+        )
 
 
 @router.put("/categories/{category_id}", response_model=CategoryResponse)
@@ -90,6 +95,11 @@ async def update_category(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una categoría con ese nombre",
+        )
 
 
 @router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)

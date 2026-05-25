@@ -57,13 +57,24 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
         style={{ transform: `translateX(-${current * 100}%)` }}
       >
         {items.map((item) => (
-          <div key={item.id} className="w-full h-full shrink-0 bg-[#263238]">
-            <img
-              src={item.image_url}
-              alt={item.title}
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
+          <div
+            key={item.id}
+            className="w-full h-full shrink-0 bg-[#263238] flex items-center justify-center relative"
+          >
+            <span className="text-white/40 text-sm font-medium px-4 text-center">
+              {item.title}
+            </span>
+            {item.image_url && (
+              <img
+                src={item.image_url}
+                alt={item.title}
+                className="absolute inset-0 w-full h-full object-cover"
+                draggable={false}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            )}
           </div>
         ))}
       </div>

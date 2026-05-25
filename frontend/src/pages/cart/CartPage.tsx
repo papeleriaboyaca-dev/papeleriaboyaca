@@ -1,4 +1,5 @@
 import { formatCOP } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { ArrowRight, ShoppingCart, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -9,6 +10,7 @@ export default function CartPage() {
   const removeItem = useCartStore((s) => s.removeItem);
   const clear = useCartStore((s) => s.clear);
   const total = useCartStore((s) => s.total);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
 
   if (items.length === 0) {
     return (
@@ -135,6 +137,12 @@ export default function CartPage() {
           >
             Proceder al pago <ArrowRight size={18} />
           </Link>
+
+          {!isAuthenticated && (
+            <p className="text-xs text-gray-400 text-center -mt-1">
+              Te pediremos iniciar sesión para finalizar la compra
+            </p>
+          )}
 
           <Link
             to="/catalogo"

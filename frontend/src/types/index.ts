@@ -89,14 +89,6 @@ export type OrderStatus =
   | "cancelled"
   | "expired";
 
-export interface ShippingAddress {
-  id: string;
-  address_line1: string;
-  address_line2?: string | null;
-  city: string;
-  postal_code: string;
-}
-
 export interface Order {
   id: string;
   order_number: string;

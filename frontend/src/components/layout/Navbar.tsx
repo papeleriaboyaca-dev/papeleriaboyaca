@@ -187,14 +187,16 @@ export default function Navbar() {
                         <User size={15} className="text-gray-400" />
                         Mi perfil
                       </Link>
-                      <Link
-                        to="/pedidos"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        <Package size={15} className="text-gray-400" />
-                        Mis pedidos
-                      </Link>
+                      {!isAdmin && (
+                        <Link
+                          to="/pedidos"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          <Package size={15} className="text-gray-400" />
+                          Mis pedidos
+                        </Link>
+                      )}
                     </div>
 
                     <div className="border-t border-gray-100 py-1">
@@ -271,13 +273,15 @@ export default function Navbar() {
                       Administración
                     </Link>
                   )}
-                  <Link
-                    to="/pedidos"
-                    onClick={() => setMobileOpen(false)}
-                    className="block text-white/80 hover:text-white text-sm px-3 py-2.5 rounded-xl hover:bg-white/10 transition"
-                  >
-                    Mis pedidos
-                  </Link>
+                  {!isAdmin && (
+                    <Link
+                      to="/pedidos"
+                      onClick={() => setMobileOpen(false)}
+                      className="block text-white/80 hover:text-white text-sm px-3 py-2.5 rounded-xl hover:bg-white/10 transition"
+                    >
+                      Mis pedidos
+                    </Link>
+                  )}
                   <Link
                     to="/perfil"
                     onClick={() => setMobileOpen(false)}

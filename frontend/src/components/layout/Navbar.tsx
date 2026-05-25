@@ -114,24 +114,26 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Cart */}
-            <Link
-              to="/carrito"
-              className="relative p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
-            >
-              <ShoppingCart size={20} />
-              {count() > 0 && (
-                <span
-                  className={cn(
-                    "absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1",
-                    "bg-[#ff7043] text-white text-[10px] font-bold rounded-full",
-                    "flex items-center justify-center",
-                  )}
-                >
-                  {count()}
-                </span>
-              )}
-            </Link>
+            {/* Cart — admins no compran */}
+            {!isAdmin && (
+              <Link
+                to="/carrito"
+                className="relative p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
+              >
+                <ShoppingCart size={20} />
+                {count() > 0 && (
+                  <span
+                    className={cn(
+                      "absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1",
+                      "bg-[#ff7043] text-white text-[10px] font-bold rounded-full",
+                      "flex items-center justify-center",
+                    )}
+                  >
+                    {count()}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Desktop: user dropdown or login */}
             {isAuthenticated() ? (

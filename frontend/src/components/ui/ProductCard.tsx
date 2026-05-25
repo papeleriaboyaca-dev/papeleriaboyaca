@@ -1,4 +1,5 @@
 import { formatCOP } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/store/toastStore";
 import type { Product } from "@/types";
 import { Package, ShoppingCart } from "lucide-react";
@@ -13,6 +14,8 @@ export default function ProductCard({
   product,
   onAddToCart,
 }: ProductCardProps) {
+  const role = useAuthStore((s) => s.user?.user_role);
+  const isAdmin = role === "ADMIN" || role === "SUPERADMIN";
   const outOfStock = product.stock === 0;
   const lowStock = product.stock > 0 && product.stock <= 5;
 
@@ -67,17 +70,19 @@ export default function ProductCard({
           )}
         </div>
 
-        <button
-          onClick={() => {
-            onAddToCart();
-            toast.success(`"${product.name}" agregado`);
-          }}
-          disabled={outOfStock}
-          className="btn btn-primary btn-sm w-full"
-        >
-          <ShoppingCart size={14} />
-          {outOfStock ? "Sin stock" : "Agregar"}
-        </button>
+        {!isAdmin && (
+          <button
+            onClick={() => {
+              onAddToCart();
+              toast.success(`"${product.name}" agregado`);
+            }}
+            disabled={outOfStock}
+            className="btn btn-primary btn-sm w-full"
+          >
+            <ShoppingCart size={14} />
+            {outOfStock ? "Sin stock" : "Agregar"}
+          </button>
+        )}
       </div>
     </div>
   );

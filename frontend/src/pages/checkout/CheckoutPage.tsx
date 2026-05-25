@@ -2,8 +2,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ShoppingCart, MapPin, Plus, Lock } from "lucide-react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { ShoppingCart, MapPin, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useCartStore } from "@/store/cartStore";
 import { orderService } from "@/services/orders";
@@ -168,15 +168,7 @@ export default function CheckoutPage() {
   const usingNewAddress = selectedAddressId === "new" || savedAddresses.length === 0;
 
   if (user?.user_role === "ADMIN" || user?.user_role === "SUPERADMIN") {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-          <Lock size={24} className="text-gray-400" />
-        </div>
-        <p className="text-gray-600 font-medium">Los administradores no pueden realizar compras.</p>
-        <button onClick={() => navigate("/admin")} className="text-sm text-[#00bfa5] hover:underline">Ir al dashboard →</button>
-      </div>
-    );
+    return <Navigate to="/admin" replace />;
   }
 
   return (

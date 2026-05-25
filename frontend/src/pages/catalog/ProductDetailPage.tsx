@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ShoppingCart, ArrowLeft, Package } from "lucide-react";
 import { catalogService } from "@/services/catalog";
+import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { formatCOP } from "@/lib/utils";
 import { toast } from "@/store/toastStore";
@@ -12,6 +13,8 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
+  const role = useAuthStore((s) => s.user?.user_role);
+  const isAdmin = role === "ADMIN" || role === "SUPERADMIN";
   const [cartOpen, setCartOpen] = useState(false);
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
@@ -131,7 +134,14 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
-            {outOfStock ? (
+            {isAdmin ? (
+              <Link
+                to={`/admin/productos/${product.id}/editar`}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 border-2 border-[#00bfa5] text-[#00bfa5] hover:bg-brand-light font-semibold rounded-xl transition"
+              >
+                Editar este producto
+              </Link>
+            ) : outOfStock ? (
               <button
                 disabled
                 className="w-full py-3 bg-gray-200 text-gray-400 font-semibold rounded-xl cursor-not-allowed"

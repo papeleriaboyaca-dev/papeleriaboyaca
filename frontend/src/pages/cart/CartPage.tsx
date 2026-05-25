@@ -2,7 +2,7 @@ import { formatCOP } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { ArrowRight, ShoppingCart, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 export default function CartPage() {
   const items = useCartStore((s) => s.items);
@@ -11,6 +11,12 @@ export default function CartPage() {
   const clear = useCartStore((s) => s.clear);
   const total = useCartStore((s) => s.total);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  const role = useAuthStore((s) => s.user?.user_role);
+
+  // Admins no compran — redirigirlos al panel.
+  if (role === "ADMIN" || role === "SUPERADMIN") {
+    return <Navigate to="/admin" replace />;
+  }
 
   if (items.length === 0) {
     return (

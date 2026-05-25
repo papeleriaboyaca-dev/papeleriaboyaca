@@ -595,52 +595,46 @@ def _validate_image(file: UploadFile, contents: bytes) -> str:
     return ext
 
 
+async def _supabase_upload(bucket: str, path: str, contents: bytes, content_type: str) -> str:
+    """Sube bytes a Supabase Storage via REST (sin SDK) y devuelve la URL pública."""
+    if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Supabase Storage not configured")
+    storage_url = f"{settings.SUPABASE_URL}/storage/v1/object/{bucket}/{path}"
+    async with httpx.AsyncClient(timeout=30.0) as sb:
+        resp = await sb.post(
+            storage_url,
+            content=contents,
+            headers={
+                "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+                "Content-Type": content_type,
+                "x-upsert": "true",
+            },
+        )
+    if not resp.is_success:
+        try:
+            body = resp.json()
+            err = body.get("message") or body.get("error") or resp.text
+        except Exception:
+            err = resp.text
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Storage {resp.status_code}: {err}",
+        )
+    return f"{settings.SUPABASE_URL}/storage/v1/object/public/{bucket}/{path}"
+
+
 @router.post("/productos/{product_id}/imagen")
 async def upload_product_image(
     product_id: str,
     file: UploadFile = File(...),
     _user: dict = Depends(require_role("ADMIN", "SUPERADMIN")),
 ):
-    import asyncio
-    from supabase import create_client
-
-    if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Supabase Storage not configured",
-        )
-
     contents = await file.read()
     ext = _validate_image(file, contents)
     path = f"products/{product_id}.{ext}"
-
-    def _upload() -> str:
-        sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-        sb.storage.from_("product-images").upload(
-            path, contents,
-            file_options={"content_type": file.content_type or "image/jpeg", "upsert": True},
-        )
-        return sb.storage.from_("product-images").get_public_url(path)
-
-    loop = asyncio.get_running_loop()
-    try:
-        public_url = await asyncio.wait_for(
-            loop.run_in_executor(None, _upload),
-            timeout=30.0,
-        )
-    except asyncio.TimeoutError:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Timeout al subir imagen al storage (>30s)",
-        )
-    except Exception as e:
-        detail = getattr(e, "message", None) or str(e)
-        if not isinstance(detail, str):
-            detail = str(detail)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Error al subir imagen: {detail}",
-        )
+    public_url = await _supabase_upload(
+        "product-images", path, contents, file.content_type or "image/jpeg"
+    )
 
     try:
         async with _internal_client() as client:
@@ -1105,43 +1099,12 @@ async def upload_marketing_image(
     file: UploadFile = File(...),
     _user: dict = Depends(require_role("ADMIN", "SUPERADMIN")),
 ):
-    import asyncio
-    from supabase import create_client
-
-    if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Supabase Storage not configured")
-
     contents = await file.read()
     ext = _validate_image(file, contents)
     path = f"banners/{content_id}.{ext}"
-
-    def _upload() -> str:
-        sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-        sb.storage.from_("marketing").upload(
-            path, contents,
-            file_options={"content_type": file.content_type or "image/jpeg", "upsert": True},
-        )
-        return sb.storage.from_("marketing").get_public_url(path)
-
-    loop = asyncio.get_running_loop()
-    try:
-        public_url = await asyncio.wait_for(
-            loop.run_in_executor(None, _upload),
-            timeout=30.0,
-        )
-    except asyncio.TimeoutError:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Timeout al subir imagen al storage (>30s)",
-        )
-    except Exception as e:
-        detail = getattr(e, "message", None) or str(e)
-        if not isinstance(detail, str):
-            detail = str(detail)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Error al subir imagen: {detail}",
-        )
+    public_url = await _supabase_upload(
+        "marketing", path, contents, file.content_type or "image/jpeg"
+    )
 
     try:
         async with _internal_client() as client:

@@ -102,8 +102,13 @@ export default function MarketingAdminPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadingFor.current) return;
-    uploadMutation.mutate({ id: uploadingFor.current, file });
     e.target.value = "";
+    if (file.size > 5 * 1024 * 1024) {
+      setuploadingId(null);
+      toast.error("La imagen supera 5MB. Redúcela antes de subirla.");
+      return;
+    }
+    uploadMutation.mutate({ id: uploadingFor.current, file });
   };
 
   const triggerUpload = (id: string) => {

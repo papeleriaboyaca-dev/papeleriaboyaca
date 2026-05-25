@@ -111,6 +111,11 @@ export default function ProductFormPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      e.target.value = "";
+      toast.error("La imagen supera 5MB. Redúcela antes de subirla.");
+      return;
+    }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };

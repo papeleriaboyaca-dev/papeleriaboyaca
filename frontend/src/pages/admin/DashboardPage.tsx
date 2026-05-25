@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Package, ShoppingBag, Tag, TrendingUp, Users, CreditCard } from "lucide-react";
 import { catalogService } from "@/services/catalog";
 import { adminService } from "@/services/admin";
@@ -13,7 +14,7 @@ export default function DashboardPage() {
 
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => catalogService.getProducts({ limit: 200 }),
+    queryFn: () => catalogService.getProducts({ limit: 200, active_only: false }),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -153,7 +154,11 @@ export default function DashboardPage() {
             <div className="p-5 text-sm text-gray-400">Sin pedidos aún.</div>
           ) : (
             orders.slice(0, 10).map((order) => (
-              <div key={order.id} className="px-5 py-3 flex items-center gap-4 text-sm">
+              <Link
+                key={order.id}
+                to={`/pedidos/${order.id}`}
+                className="px-5 py-3 flex items-center gap-4 text-sm hover:bg-gray-50 transition"
+              >
                 <span className="font-mono text-gray-600 text-xs font-medium w-32 shrink-0">
                   {order.order_number}
                 </span>
@@ -168,7 +173,7 @@ export default function DashboardPage() {
                 <span className="font-bold text-[#ff7043] shrink-0">
                   {formatCOP(order.total)}
                 </span>
-              </div>
+              </Link>
             ))
           )}
         </div>

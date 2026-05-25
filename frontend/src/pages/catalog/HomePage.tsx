@@ -40,8 +40,9 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const carouselItems = marketing?.carousel ?? [];
-  const panelItems = marketing?.panels ?? [];
+  // Solo banners con imagen — los que están sin upload no deben verse en la home.
+  const carouselItems = (marketing?.carousel ?? []).filter((i) => i.image_url);
+  const panelItems = (marketing?.panels ?? []).filter((i) => i.image_url);
 
   return (
     <>

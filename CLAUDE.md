@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-### Backend (from `papeleriav2/` root)
+### Backend (from repo root)
 
 ```bash
 # Start all services (always use --env-file deploy/.env)
@@ -23,16 +23,13 @@ make stop
 make restart
 make logs
 
+# Rebuild a single service without restarting everything:
+docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build catalog-service
+
 # Run unit tests per service (no Docker needed, SQLite in-memory)
 make test
-# Run a single service's unit tests:
-cd order-service && pytest tests/test_order_service.py -v -p no:warnings
-
-# Run HTTP tests (spin up the service without Docker):
-cd catalog-service && pytest tests/test_http_catalog.py -v
-
-# Smoke tests (requires running stack):
-pytest tests_smoke/ -v
+# Run a single service's tests:
+cd order-service && pytest tests/ -v -m "not integration" -p no:warnings
 
 # Integration tests (spins up Postgres on port 5433):
 make test-integration
@@ -40,14 +37,18 @@ make test-integration
 # Coverage:
 make test-cov
 
-# Lint / Format:
+# Lint / Format / Type-check:
 make lint       # flake8, max-line-length=120
 make format     # black + isort
+make type-check # mypy (--ignore-missing-imports)
+
+make clean      # remove __pycache__, .pytest_cache, .mypy_cache
 ```
 
-### Frontend (`papeleriav2/frontend/`)
+### Frontend (`frontend/`)
 
 ```bash
+pnpm install
 pnpm dev        # dev server at :5173, proxies /api → :8083
 pnpm build      # tsc -b && vite build
 pnpm lint       # eslint
@@ -73,11 +74,11 @@ Each service connects to **Supabase PostgreSQL** using its own isolated schema (
 
 ### Internal Service Layout (hexagonal)
 
-Each microservice follows the same four-layer pattern:
+`identity-service` and `catalog-service` have four layers; `order-service` and `payment-service` have three (no `domain/`). `api-gateway` only has `interfaces/`.
 
 ```
 src/
-  domain/          # Entities and pure business rules (no FastAPI, no SQLAlchemy)
+  domain/          # Entities and pure business rules — only in identity/catalog
   application/     # Use cases + Pydantic DTOs
   infrastructure/  # SQLAlchemy models, repositories, external clients
   interfaces/      # FastAPI router (http.py)
@@ -108,22 +109,23 @@ The gateway passes `is_admin=true` (without `user_id`) for admin requests to ord
 
 ### Payment Flow (Wompi)
 
-Two-step process:
-1. `POST /pagos/transactions` → creates a `Transaction` record in DB (`status=pending`)
-2. `POST /pagos/checkout` → calls Wompi API, updates transaction to `status=processing`, returns `async_payment_url` for async methods (Nequi, PSE) or confirmation for synchronous ones
-3. Wompi webhook → `POST /pagos/webhooks/wompi` → updates transaction status and calls order-service to update order status
+Three-step process:
+1. `POST /api/pedidos` → creates order, reduces stock atomically (`status=pending_payment`)
+2. `POST /api/pagos/transactions` → creates a `Transaction` record (`status=pending`)
+3. `POST /api/pagos/checkout` → calls Wompi API, returns `async_payment_url` for async methods (Nequi, PSE) or confirmation for synchronous ones
+4. Wompi webhook → `POST /api/pagos/webhooks/wompi` → verifies SHA256 signature, updates transaction, calls order-service to set order to `paid`
+
+Orders in `pending_payment` for more than 30 minutes are expired by a cleanup job in order-service (runs every 5 min); stock is restored on expiry or cancellation.
 
 ### Frontend
 
-React 19 + Vite 8 + TypeScript. State: TanStack Query v5 (server state) + Zustand v5 (auth, cart, toasts). Forms: react-hook-form + zod.
+React 19 + Vite + TypeScript. State: TanStack Query v5 (server state) + Zustand v5 (auth, cart, toasts). Forms: react-hook-form + zod.
 
 `src/lib/axios.ts` — `api` instance with base `/api`, auto-attaches `Authorization` header from `localStorage`, redirects to `/login` on 401.
 
-Vite dev server proxies `/api/*` → `http://localhost:8083` (configured in `vite.config.ts`).
-
 **Stores:**
 - `authStore` — JWT token + parsed payload (persisted via zustand/middleware). Use `useAuthStore((s) => s.user?.user_role)` for role checks.
-- `cartStore` — cart items + total, not persisted to server.
+- `cartStore` — cart items + total, not persisted to server. Cleared on logout.
 - `toastStore` — transient notifications; use `toast.success()` / `toast.error()` singleton.
 
 **Services** (`src/services/`) — thin wrappers around `api` (axios). One file per domain: `auth`, `catalog`, `orders`, `payments`, `admin`, `addresses`.
@@ -139,19 +141,29 @@ Vite dev server proxies `/api/*` → `http://localhost:8083` (configured in `vit
 - **Monetary values**: `Numeric(14, 2)` in SQLAlchemy models (not `Float`). Apply `deploy/schema_migration_numeric.sql` against Supabase when changing schemas.
 - **Status values**: lowercase in DB and API (`pending`, `confirmed`, `processing`, `shipped`, `delivered`, `cancelled`). Frontend maps them to Spanish labels via `STATUS_LABEL` records.
 - **Order audit trail**: `OrderHistoryRepository` writes a row to `order_service.order_history` on every status change, including order creation. Wired in `OrderService.__init__` alongside other repos.
-- **Stock management**: Stock is reduced atomically at order creation (not at payment). On cancel, stock is restored. There is no deferred reservation.
+- **Stock management**: Stock is reduced atomically at order creation (not at payment). On cancel or expiry, stock is restored.
 - **Soft delete for products**: `DELETE /productos/{id}` sets `is_active=false`, never deletes the row.
 - **Active-only filter**: `GET /productos` passes `active_only=false` for admin users so they see inactive products too.
 
 ---
 
+## Tests
+
+The root `conftest.py` provides shared fixtures usable across all services: `make_access_token(user_id, email, role_id, expired)`, `make_refresh_token()`, `auth_headers(token)`. These use HS256 with a test-only secret — not the production JWT flow.
+
+Unit tests use SQLite in-memory (`-m "not integration"`). Integration tests require a real PostgreSQL instance started by `make test-integration` on port 5433.
+
+---
+
 ## Environment
 
-Credentials live in `deploy/.env` (gitignored). Never use `.env.local` or other locations — docker-compose.yml and Makefile are hardcoded to `--env-file deploy/.env`.
+Credentials live in `deploy/.env` (gitignored). Never use `.env.local` or other locations — `docker-compose.yml` and `Makefile` are hardcoded to `--env-file deploy/.env`.
 
-Required variables: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `WOMPI_PRIVATE_KEY`, `WOMPI_PUBLIC_KEY`, `WOMPI_EVENTS_SECRET`, `WOMPI_INTEGRITY_SECRET`.
+Required variables: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `INTERNAL_API_SECRET`, `WOMPI_PRIVATE_KEY`, `WOMPI_PUBLIC_KEY`, `WOMPI_EVENTS_SECRET`, `WOMPI_INTEGRITY_SECRET`.
 
 `WOMPI_TEST_MODE=true` by default; set to `false` and use production keys for live payments.
+
+`INTERNAL_API_SECRET` is shared among all services for inter-service trust validation.
 
 ---
 

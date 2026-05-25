@@ -82,9 +82,11 @@ export default function MarketingAdminPage() {
       queryClient.invalidateQueries({ queryKey: ["marketing-public"] });
       toast.success("Imagen actualizada");
     },
-    onError: () => {
+    onError: (err: unknown) => {
       setuploadingId(null);
-      toast.error("Error al subir imagen");
+      console.error("[uploadMarketingImage]", err);
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : "Error al subir imagen");
     },
   });
 

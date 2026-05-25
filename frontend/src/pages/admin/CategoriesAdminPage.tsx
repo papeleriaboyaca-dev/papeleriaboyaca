@@ -45,7 +45,11 @@ export default function CategoriesAdminPage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       toast.success("Categoría actualizada");
     },
-    onError: () => toast.error("No se pudo actualizar la categoría"),
+    onError: (err: unknown) => {
+      console.error("[updateCategory]", err);
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : "No se pudo actualizar la categoría");
+    },
     onSettled: () => setEditingId(null),
   });
 

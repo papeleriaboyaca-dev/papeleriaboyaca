@@ -111,8 +111,16 @@ export default function ProductFormPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    if (file.size === 0) {
+      toast.error("El archivo está vacío o es inválido.");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Solo se permiten imágenes JPEG, PNG o WebP.");
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
-      e.target.value = "";
       toast.error("La imagen supera 5MB. Redúcela antes de subirla.");
       return;
     }

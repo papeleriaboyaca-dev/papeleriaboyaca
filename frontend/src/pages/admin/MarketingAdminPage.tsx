@@ -99,15 +99,44 @@ export default function MarketingAdminPage() {
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadingFor.current) return;
     e.target.value = "";
+
+    if (file.size === 0) {
+      setuploadingId(null);
+      toast.error("El archivo está vacío o es inválido.");
+      return;
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setuploadingId(null);
+      toast.error("Solo se permiten imágenes JPEG, PNG o WebP.");
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
       setuploadingId(null);
       toast.error("La imagen supera 5MB. Redúcela antes de subirla.");
       return;
     }
+
+    // Aviso de orientación — no bloquea, solo informa
+    await new Promise<void>((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        if (img.width / img.height < 2) {
+          toast.info("La imagen es cuadrada o vertical. Los banners se ven mejor en formato horizontal (mínimo 2:1).");
+        }
+        resolve();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      img.src = url;
+    });
+
     uploadMutation.mutate({ id: uploadingFor.current, file });
   };
 
@@ -134,6 +163,16 @@ export default function MarketingAdminPage() {
         >
           <Plus size={16} /> Nuevo banner
         </button>
+      </div>
+
+      {/* Specs de imagen */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700 space-y-1">
+        <p className="font-semibold text-blue-800">Especificaciones de imagen</p>
+        <ul className="space-y-0.5 list-disc list-inside text-blue-600">
+          <li><span className="font-medium">Carrusel hero</span> — horizontal 3:1, recomendado 1920 × 640 px</li>
+          <li><span className="font-medium">Panel promo</span> — 16:9, recomendado 1200 × 675 px</li>
+          <li>Formatos: JPEG, PNG o WebP &middot; Máximo 5 MB</li>
+        </ul>
       </div>
 
       {/* Create form */}

@@ -32,7 +32,16 @@ export default function Footer() {
           <h4 className="font-semibold text-white mb-3">Contacto</h4>
           <ul className="space-y-2 text-white/50 text-xs">
             <li>Boyacá, Colombia</li>
-            <li>info@papeleriaboyaca.co</li>
+            <li>
+              <a href="tel:3125220832" className="hover:text-white transition">
+                312 522 0832
+              </a>
+            </li>
+            <li>
+              <a href="mailto:grupocomercialatlantis@gmail.com" className="hover:text-white transition">
+                grupocomercialatlantis@gmail.com
+              </a>
+            </li>
           </ul>
         </div>
       </div>

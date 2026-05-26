@@ -73,6 +73,7 @@ export default function ProductsAdminPage() {
     },
     onError: (err: unknown) => {
       console.error("[uploadProductImage]", err);
+      setImageProductId(null);
       toast.error(getApiErrorDetail(err) ?? "Error al subir la imagen");
     },
   });
@@ -89,6 +90,22 @@ export default function ProductsAdminPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !imageProductId) return;
+    e.target.value = "";
+    if (file.size === 0) {
+      setImageProductId(null);
+      toast.error("El archivo está vacío o es inválido.");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setImageProductId(null);
+      toast.error("Solo se permiten imágenes JPEG, PNG o WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageProductId(null);
+      toast.error("La imagen supera 5MB. Redúcela antes de subirla.");
+      return;
+    }
     uploadMutation.mutate({ id: imageProductId, file });
   };
 

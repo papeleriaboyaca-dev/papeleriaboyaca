@@ -5,7 +5,7 @@ import { toast } from "@/store/toastStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, RefreshCw, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
@@ -50,29 +50,34 @@ export default function ProductFormPage() {
     register,
     handleSubmit,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
-    values: existing
-      ? {
-          sku: existing.sku ?? "",
-          name: existing.name,
-          description: existing.description ?? "",
-          price: existing.price,
-          stock: existing.stock,
-          category_id: existing.category_id,
-          is_active: existing.is_active,
-        }
-      : {
-          sku: generateSKU(),
-          name: "",
-          description: "",
-          price: 0,
-          stock: 0,
-          category_id: "",
-          is_active: true,
-        },
+    defaultValues: {
+      sku: generateSKU(),
+      name: "",
+      description: "",
+      price: 0,
+      stock: 0,
+      category_id: "",
+      is_active: true,
+    },
   });
+
+  useEffect(() => {
+    if (existing) {
+      reset({
+        sku: existing.sku ?? "",
+        name: existing.name,
+        description: existing.description ?? "",
+        price: existing.price,
+        stock: existing.stock,
+        category_id: existing.category_id,
+        is_active: existing.is_active,
+      });
+    }
+  }, [existing, reset]);
 
   const imageMutation = useMutation({
     mutationFn: ({ productId, file }: { productId: string; file: File }) =>

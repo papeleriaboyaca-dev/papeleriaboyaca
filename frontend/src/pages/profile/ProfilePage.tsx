@@ -386,7 +386,7 @@ export default function ProfilePage() {
                   >
                     {[
                       { name: "address_line1" as const, placeholder: "Calle 12 # 34-56" },
-                      { name: "address_line2" as const, placeholder: "Apto 301 (opcional)" },
+                      { name: "address_line2" as const, placeholder: "Barrio, Apto, Torre… (opcional)" },
                       { name: "city" as const, placeholder: "Tunja" },
                       { name: "postal_code" as const, placeholder: "150001" },
                     ].map(({ name, placeholder }) => (
@@ -471,8 +471,8 @@ export default function ProfilePage() {
                   },
                   {
                     name: "address_line2" as const,
-                    label: "Apto / Torre (opcional)",
-                    placeholder: "Apto 301",
+                    label: "Barrio / Apto (opcional)",
+                    placeholder: "Barrio, Apto, Torre…",
                   },
                   {
                     name: "city" as const,

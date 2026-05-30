@@ -256,7 +256,7 @@ export default function CheckoutPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Complemento <span className="text-gray-400 font-normal">(opcional)</span>
                     </label>
-                    <input {...register("address_line2")} placeholder="Apto 201, Torre B…" className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm outline-none focus:border-[#00bfa5] focus:ring-1 focus:ring-[#00bfa5] transition" />
+                    <input {...register("address_line2")} placeholder="Barrio, Apto, Torre… (opcional)" className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm outline-none focus:border-[#00bfa5] focus:ring-1 focus:ring-[#00bfa5] transition" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>

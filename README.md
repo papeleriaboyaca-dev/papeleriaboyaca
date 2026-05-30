@@ -399,7 +399,24 @@ FRONTEND_URL=https://tudominio.com
 | `DATABASE_URL` | Supabase → Project Settings → Database → Session Pooler |
 | `WOMPI_*` | [Dashboard Wompi](https://comercios.wompi.co) → Desarrolladores |
 
-### 2. Storage en Supabase
+### 2. Email transaccional (Resend)
+
+Configura SMTP en **Supabase → Project Settings → Authentication → SMTP Settings**:
+
+```
+Host:     smtp.resend.com
+Port:     465
+User:     resend
+Password: re_xxxxxxxxxxxxxxxxxx   ← API key de resend.com
+Sender:   Papelería Boyacá <noreply@mail.tudominio.com>
+```
+
+Correos que se envían automáticamente:
+- **Confirmación de cuenta** al registrarse
+- **Recuperación de contraseña** al solicitar reset
+- **Notificación de cambio de contraseña**
+
+### 3. Storage en Supabase
 
 Crea dos buckets **públicos** en Supabase → Storage:
 
@@ -408,7 +425,7 @@ Crea dos buckets **públicos** en Supabase → Storage:
 | `product-images` | Imágenes de productos |
 | `marketing` | Banners del carrusel y paneles de la home |
 
-### 3. Levantar
+### 4. Levantar
 
 ```bash
 # Con Make (recomendado — reconstruye sin caché)

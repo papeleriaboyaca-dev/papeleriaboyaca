@@ -76,3 +76,7 @@ Thumbs.db
 
 # CodeGraph index (generado automáticamente)
 .codegraph/
+
+# Claude Code
+CLAUDE.md
+conftest.py

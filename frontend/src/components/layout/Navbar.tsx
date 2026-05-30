@@ -181,14 +181,16 @@ export default function Navbar() {
                           Administración
                         </Link>
                       )}
-                      <Link
-                        to="/perfil"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        <User size={15} className="text-gray-400" />
-                        Mi perfil
-                      </Link>
+                      {!isAdmin && (
+                        <Link
+                          to="/perfil"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          <User size={15} className="text-gray-400" />
+                          Mi perfil
+                        </Link>
+                      )}
                       {!isAdmin && (
                         <Link
                           to="/pedidos"

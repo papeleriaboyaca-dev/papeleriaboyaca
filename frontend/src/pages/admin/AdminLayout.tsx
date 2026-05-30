@@ -80,7 +80,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Content */}
-      <main className="flex-1 bg-[#f5f5f5] overflow-auto">
+      <main className="flex-1 bg-[#f5f5f5] overflow-auto pl-12 md:pl-0">
         <Outlet />
       </main>
     </div>

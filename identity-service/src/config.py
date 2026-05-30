@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_HOURS: int = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
     JWT_REFRESH_EXPIRATION_DAYS: int = int(os.getenv("JWT_REFRESH_EXPIRATION_DAYS", 7))
     
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://tnoyilwwfvigxoetxasj.supabase.co")
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")   # service_role key
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
     

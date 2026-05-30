@@ -73,7 +73,7 @@ sequenceDiagram
     SB-->>ID: access_token (ES256) + refresh_token
     ID-->>GW: TokenResponse
     GW-->>U: {access_token, refresh_token}
-    Note over U: sessionStorage (tab-specific)
+    Note over U: sessionStorage (por pestaña)
 
     U->>GW: GET /api/pedidos<br/>Authorization: Bearer <token>
     GW->>GW: 1. Descarga JWKS de Supabase (cacheado)<br/>2. jwt.decode(aud="authenticated")<br/>3. Lee user_role del claim
@@ -176,43 +176,53 @@ erDiagram
     direction TB
 
     %% ══ identity_service ════════════════════════════
+    ROLES {
+        uuid    id          PK
+        varchar name        "CLIENTE|ADMIN|SUPERADMIN"
+        text    description
+        bool    is_active
+    }
     USERS {
         uuid    id          PK
+        uuid    supabase_id "Supabase Auth UUID"
         varchar email       "UNIQUE"
-        varchar password_hash
         varchar first_name
         varchar last_name
-        varchar document_id "UNIQUE"
+        varchar document_id
         varchar phone
         varchar city
-        varchar user_role   "CLIENTE|ADMIN|SUPERADMIN"
+        uuid    role_id     FK
         bool    is_active
         ts      created_at
     }
 
     %% ══ catalog_service ═════════════════════════════
     CATEGORIES {
-        uuid    id    PK
+        uuid    id          PK
         varchar name
-        varchar slug  "UNIQUE"
+        varchar slug        "UNIQUE"
         text    description
         bool    is_active
     }
     PRODUCTS {
         uuid    id          PK
         uuid    category_id FK
+        varchar sku         "UNIQUE"
         varchar name
         text    description
         numeric price       "Numeric(14,2)"
+        numeric cost_price  "Numeric(14,2)"
         int     stock
         varchar image_url
+        varchar sku_barcode
         bool    is_active
     }
     MARKETING_CONTENT {
         uuid    id            PK
         varchar title
         varchar type          "carousel|panel"
-        varchar image_url
+        text    image_url
+        text    image_path
         int     display_order
         bool    is_active
         ts      created_at
@@ -220,13 +230,22 @@ erDiagram
 
     %% ══ order_service ═══════════════════════════════
     ORDERS {
-        uuid    id             PK
+        uuid    id                  PK
         uuid    user_id
-        varchar order_number   "UNIQUE"
+        varchar order_number        "UNIQUE"
         varchar status
-        numeric subtotal       "Numeric(14,2)"
-        numeric discount_amount
-        numeric total          "Numeric(14,2)"
+        numeric subtotal            "Numeric(14,2)"
+        numeric tax                 "Numeric(12,2)"
+        numeric discount            "Numeric(12,2)"
+        numeric tax_amount          "Numeric(14,2)"
+        numeric discount_percentage "Numeric(5,2)"
+        numeric discount_amount     "Numeric(14,2)"
+        numeric total               "Numeric(14,2)"
+        uuid    shipping_address_id FK
+        varchar tracking_number
+        varchar shipping_carrier
+        ts      shipped_at
+        ts      delivered_at
         ts      created_at
     }
     ORDER_ITEMS {
@@ -245,41 +264,52 @@ erDiagram
         varchar address_line2
         varchar city
         varchar postal_code
+        varchar country
+        bool    is_default
+        bool    is_active
     }
     ORDER_HISTORY {
-        uuid    id        PK
-        uuid    order_id  FK
-        varchar status
-        text    note
+        uuid    id         PK
+        uuid    order_id   FK
+        varchar old_status
+        varchar new_status
+        uuid    changed_by
+        text    notes
         ts      created_at
     }
 
     %% ══ payment_service ═════════════════════════════
     TRANSACTIONS {
-        uuid    id             PK
+        uuid    id                   PK
         uuid    order_id
         uuid    user_id
-        numeric amount         "Numeric(14,2)"
-        varchar currency       "COP"
+        numeric amount               "Numeric(14,2)"
         varchar status
+        varchar payment_gateway      "wompi"
         varchar payment_method
-        varchar wompi_id
-        varchar wompi_status
+        varchar wompi_reference      "UNIQUE"
+        varchar wompi_transaction_id
+        jsonb   gateway_response
+        text    error_message
+        jsonb   meta
         ts      created_at
     }
     WEBHOOKS_LOG {
         uuid    id              PK
-        uuid    transaction_id  FK
         varchar event_type
+        varchar wompi_reference
+        varchar event_id        "UNIQUE"
         jsonb   payload
         bool    processed
-        ts      received_at
+        text    error_message
+        ts      created_at
     }
 
-    CATEGORIES ||--o{ PRODUCTS : "tiene"
-    ORDERS     ||--|{ ORDER_ITEMS : "contiene"
-    ORDERS     ||--o{ ORDER_HISTORY : "historial"
-    TRANSACTIONS ||--o{ WEBHOOKS_LOG : "eventos Wompi"
+    ROLES         ||--o{ USERS         : "asignado a"
+    CATEGORIES    ||--o{ PRODUCTS      : "tiene"
+    ORDERS        ||--|{ ORDER_ITEMS   : "contiene"
+    ORDERS        ||--o{ ORDER_HISTORY : "historial"
+    ORDERS        ||--o| SHIPPING_ADDRESSES : "envío a"
 ```
 
 ---

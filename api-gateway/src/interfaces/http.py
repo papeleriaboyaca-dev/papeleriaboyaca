@@ -322,16 +322,29 @@ async def change_password(
     request_data: ChangePasswordRequest,
     user: dict = Depends(get_current_user),
 ):
+    authorization = request.headers.get("Authorization", "")
+    access_token = authorization.split(" ", 1)[1] if authorization.startswith("Bearer ") else ""
+    if not access_token or not settings.SUPABASE_URL:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se pudo autenticar la solicitud")
     try:
-        async with _internal_client() as client:
-            response = await client.post(
-                f"{settings.IDENTITY_SERVICE_URL}/auth/change-password",
-                json={"supabase_id": user["sub"],
-                      "new_password": request_data.new_password},
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.put(
+                f"{settings.SUPABASE_URL}/auth/v1/user",
+                json={"password": request_data.new_password},
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "apikey": settings.SUPABASE_KEY or "",
+                    "Content-Type": "application/json",
+                },
             )
-            response.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        raise _proxy_error(e)
+            if not response.is_success:
+                try:
+                    detail = response.json().get("message") or response.text
+                except Exception:
+                    detail = response.text
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+    except HTTPException:
+        raise
     except httpx.HTTPError as e:
         raise _upstream_error(e)
 

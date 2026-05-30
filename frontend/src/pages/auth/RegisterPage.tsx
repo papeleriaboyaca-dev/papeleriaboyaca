@@ -3,7 +3,7 @@ import { authService } from "@/services/auth";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/store/toastStore";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,6 +29,7 @@ export default function RegisterPage() {
   const setToken = useAuthStore((s) => s.setToken);
   const [showPass, setShowPass] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
 
   const {
     register,
@@ -40,7 +41,11 @@ export default function RegisterPage() {
     setServerError("");
     try {
       const res = await authService.register(data);
-      setToken(res.access_token, res.refresh_token);
+      if (res.requires_confirmation) {
+        setConfirmEmail(data.email);
+        return;
+      }
+      setToken(res.access_token, res.refresh_token ?? "");
       toast.success("¡Cuenta creada! Bienvenido a Papelería Boyacá");
       navigate("/");
     } catch {
@@ -63,6 +68,35 @@ export default function RegisterPage() {
       placeholder: "tucorreo@ejemplo.com",
     },
   ];
+
+  if (confirmEmail) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-[#e0f7f4] flex items-center justify-center mx-auto">
+            <Mail size={26} className="text-[#00bfa5]" />
+          </div>
+          <h1 className="text-xl font-poppins font-bold text-[#263238]">
+            Revisa tu correo
+          </h1>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Enviamos un enlace de confirmación a{" "}
+            <span className="font-medium text-[#263238]">{confirmEmail}</span>.
+            Haz clic en el enlace para activar tu cuenta.
+          </p>
+          <p className="text-xs text-gray-400">
+            ¿No lo ves? Revisa la carpeta de spam.
+          </p>
+          <Link
+            to="/login"
+            className="block w-full py-2.5 bg-[#00bfa5] hover:bg-brand-hover text-white font-semibold rounded-xl transition text-sm"
+          >
+            Ir a iniciar sesión
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">

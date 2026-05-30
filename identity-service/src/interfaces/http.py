@@ -30,16 +30,19 @@ async def register(
             first_name=user_data.first_name,
             last_name=user_data.last_name,
         )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    try:
         tokens = await auth_service.login_user(
             email=user_data.email,
             password=user_data.password,
         )
         return tokens
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    except ValueError:
+        # Supabase tiene confirmación de email activa — el usuario debe confirmar antes de entrar
+        from src.application.dtos import TokenResponse
+        return TokenResponse(requires_confirmation=True)
 
 
 @router.post("/login", response_model=TokenResponse)

@@ -42,6 +42,7 @@ class ProductUpdate(BaseModel):
     is_active: Optional[bool] = None
     description: Optional[str] = Field(None, max_length=2000)
     image_url: Optional[str] = Field(None, max_length=500)
+    category_id: Optional[UUID] = None
 
 
 class ProductResponse(BaseModel):

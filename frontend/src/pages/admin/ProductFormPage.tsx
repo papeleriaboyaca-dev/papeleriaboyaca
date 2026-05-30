@@ -33,6 +33,7 @@ export default function ProductFormPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasPopulated = useRef(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -66,7 +67,8 @@ export default function ProductFormPage() {
   });
 
   useEffect(() => {
-    if (existing) {
+    if (existing && !hasPopulated.current) {
+      hasPopulated.current = true;
       reset({
         sku: existing.sku ?? "",
         name: existing.name,
